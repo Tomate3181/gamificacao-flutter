@@ -8,7 +8,6 @@ import 'package:ecoplanet/features/shop/data/shop_repository.dart';
 import 'package:ecoplanet/features/shop/domain/upgrade.dart';
 import 'package:ecoplanet/features/steps/data/pedometer_source.dart';
 import 'package:ecoplanet/features/steps/data/step_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 
 const testUserId = 'user-1';
