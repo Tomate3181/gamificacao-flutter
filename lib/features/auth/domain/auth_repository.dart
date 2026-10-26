@@ -20,6 +20,9 @@ abstract interface class AuthRepository {
   /// Emite um evento a cada mudança de sessão.
   Stream<void> authStateChanges();
 
+  /// Emite o id do usuário logado (ou `null`) sempre que ele muda.
+  Stream<String?> userIdChanges();
+
   Future<void> signIn({required String email, required String password});
 
   Future<SignUpResult> signUp({

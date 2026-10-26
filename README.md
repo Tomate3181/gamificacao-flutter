@@ -48,6 +48,10 @@ flutter run -d chrome --dart-define=SUPABASE_URL=https://xxx.supabase.co --dart-
 
 Se o app abrir sem as chaves, ele mostra uma tela explicando o que falta.
 
+### Passos e modo demo
+
+No celular, o pedômetro converte passos em Energia Verde (100 passos = 1 energia). No navegador e no emulador não há pedômetro: use **Perfil → Simular 500 passos**. Os passos simulados passam pelo mesmo limite do servidor, de 10 passos por segundo acumulados por até 1 hora.
+
 ## 4. Testes
 
 ```bash
@@ -65,7 +69,14 @@ lib/
 ├── core/          # config, rotas (GoRouter), tema e validações
 ├── features/      # uma pasta por feature, com data/, domain/ e presentation/
 └── widgets/       # widgets reutilizáveis
-supabase/migrations/  # schema, RLS, trigger de perfil e dados iniciais
+supabase/migrations/  # schema, RLS, trigger de perfil, dados iniciais e RPCs da economia
+tool/sprites/         # script que gera os sprites em pixel art (Python + Pillow)
+```
+
+Para regenerar os sprites:
+
+```bash
+python tool/sprites/generate_sprites.py
 ```
 
 ## Segurança

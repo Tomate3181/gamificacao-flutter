@@ -21,6 +21,9 @@ class FakeAuthRepository implements AuthRepository {
   Stream<void> authStateChanges() => const Stream.empty();
 
   @override
+  Stream<String?> userIdChanges() => const Stream.empty();
+
+  @override
   Future<void> signIn({required String email, required String password}) async {
     signInCalls++;
     if (signInFailure != null) throw signInFailure!;

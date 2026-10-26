@@ -33,6 +33,10 @@ class SupabaseAuthRepository implements AuthRepository {
   Stream<void> authStateChanges() => _auth.onAuthStateChange.map((_) {});
 
   @override
+  Stream<String?> userIdChanges() =>
+      _auth.onAuthStateChange.map((state) => state.session?.user.id).distinct();
+
+  @override
   Future<void> signIn({required String email, required String password}) {
     return _guard(
       () => _auth.signInWithPassword(email: email.trim(), password: password),
