@@ -8,6 +8,7 @@ import '../../../core/theme/sprites.dart';
 import '../../../widgets/eco_button.dart';
 import '../../../widgets/error_retry.dart';
 import '../../../widgets/pixel_image.dart';
+import '../../../widgets/reward_burst.dart';
 import '../domain/mission.dart';
 import 'mission_tile.dart';
 import 'missions_controller.dart';
@@ -122,19 +123,34 @@ class _Details extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.skyMid,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isReady ? AppColors.gold : AppColors.outline,
-                      width: 2,
+                // Ao resgatar, a missão vira "concluída" e solta partículas.
+                child: RewardBurst(
+                  trigger: mission.status == MissionStatus.completed
+                      ? mission.id
+                      : null,
+                  particles: const [
+                    Sprites.points,
+                    Sprites.energy,
+                    Sprites.leaf,
+                  ],
+                  count: 14,
+                  distance: 80,
+                  particleSize: 18,
+                  duration: const Duration(milliseconds: 1200),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.skyMid,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isReady ? AppColors.gold : AppColors.outline,
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: PixelImage(
-                    Sprites.missionCategory(mission.category.name),
-                    size: 72,
+                    child: PixelImage(
+                      Sprites.missionCategory(mission.category.name),
+                      size: 72,
+                    ),
                   ),
                 ),
               ),

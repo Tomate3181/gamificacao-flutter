@@ -15,6 +15,8 @@ typedef PlantResult = ({
   int totalPoints,
   int reforestedSlots,
   bool planetCompleted,
+  int pointsEarned,
+  PlanetPreview? nextPlanet,
   List<UnlockedAchievement> achievements,
 });
 
@@ -109,6 +111,8 @@ class SupabasePlanetRepository implements PlanetRepository {
         totalPoints: (result['total_points'] as num).toInt(),
         reforestedSlots: (result['reforested_slots'] as num).toInt(),
         planetCompleted: result['planet_completed'] as bool,
+        pointsEarned: (result['points_earned'] as num?)?.toInt() ?? 0,
+        nextPlanet: PlanetPreview.fromJson(result['next_planet']),
         achievements: UnlockedAchievement.listFrom(
           result['achievements_unlocked'],
         ),

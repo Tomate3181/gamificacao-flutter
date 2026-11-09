@@ -29,8 +29,8 @@ class Sprites {
   static String planet(String theme) =>
       '$_root/planets/planet_${_theme(theme)}.png';
 
-  /// Planeta usado como logo do app.
-  static const logo = '$_root/planets/planet_forest.png';
+  /// Logo do app: planeta meio reflorestado com a Lumi (48x48).
+  static const logo = '$_root/logo/logo.png';
 
   static const energy = '$_root/icons/energy.png';
   static const oxygen = '$_root/icons/oxygen.png';

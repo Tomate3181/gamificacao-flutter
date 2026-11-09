@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/sprites.dart';
 import '../../../core/utils/number_format.dart';
 import '../../../widgets/eco_button.dart';
+import '../../../widgets/floating_reward_text.dart';
 import '../../../widgets/message_banner.dart';
 import '../../../widgets/planet_progress_bar.dart';
 import '../../../widgets/planet_view.dart';
@@ -19,6 +20,7 @@ import '../../player/domain/player_stats.dart';
 import '../../player/presentation/player_controller.dart';
 import '../domain/planet_models.dart';
 import 'lumi_controller.dart';
+import 'planet_completed_dialog.dart';
 import 'planet_controller.dart';
 import 'species_picker_sheet.dart';
 
@@ -33,6 +35,12 @@ class PlanetPage extends ConsumerStatefulWidget {
 class _PlanetPageState extends ConsumerState<PlanetPage> {
   Timer? _growthTicker;
   DateTime _now = DateTime.now();
+
+  // Efeitos: partículas numa região e "+X" subindo nos contadores.
+  int? _burstSlot;
+  int _burstCount = 0;
+  ResourceGains _gains = const ResourceGains();
+  bool _traveling = false;
 
   @override
   void initState() {
@@ -56,11 +64,28 @@ class _PlanetPageState extends ConsumerState<PlanetPage> {
       return;
     }
     // Alguma muda virou árvore neste segundo? A Lumi comemora.
-    final grewUp = planet.trees.values.any(
-      (tree) => !tree.isGrown(previous) && tree.isGrown(now),
-    );
-    if (grewUp) ref.read(lumiControllerProvider.notifier).celebrate();
-    setState(() => _now = now);
+    final grown = planet.trees.values
+        .where((tree) => !tree.isGrown(previous) && tree.isGrown(now))
+        .toList();
+    if (grown.isNotEmpty) {
+      ref.read(lumiControllerProvider.notifier).celebrate();
+    }
+    setState(() {
+      _now = now;
+      if (grown.isNotEmpty) _burst(grown.first.slotIndex);
+    });
+  }
+
+  void _burst(int slot) {
+    _burstSlot = slot;
+    _burstCount++;
+  }
+
+  Future<void> _travel() async {
+    if (_traveling) return;
+    setState(() => _traveling = true);
+    await ref.read(planetControllerProvider.notifier).travelToNext();
+    if (mounted) setState(() => _traveling = false);
   }
 
   Future<void> _onSlotTap(PlanetState planet, int slot) async {
@@ -91,18 +116,24 @@ class _PlanetPageState extends ConsumerState<PlanetPage> {
     final outcome = await ref
         .read(planetControllerProvider.notifier)
         .plant(slotIndex: slot, speciesId: speciesId);
+    if (!mounted) return;
+    if (outcome.failure == null) setState(() => _burst(slot));
+
     final lines = [
       if (outcome.failure != null) outcome.failure!.message,
-      if (outcome.planetCompleted)
-        'Planeta 100% reflorestado! Você ganhou pontos.',
       for (final achievement in outcome.achievements)
         'Conquista desbloqueada: ${achievement.name}!',
     ];
-    final message = lines.isEmpty ? null : lines.join('\n');
-    if (message != null) {
+    if (lines.isNotEmpty) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(message)));
+        ..showSnackBar(SnackBar(content: Text(lines.join('\n'))));
+    }
+
+    final completion = outcome.completion;
+    if (completion != null) {
+      await showPlanetCompletedDialog(context, completion);
+      if (mounted) await _travel();
     }
   }
 
@@ -110,6 +141,12 @@ class _PlanetPageState extends ConsumerState<PlanetPage> {
   Widget build(BuildContext context) {
     final planetAsync = ref.watch(planetControllerProvider);
     final player = ref.watch(playerControllerProvider);
+    ref.listen(playerControllerProvider, (previous, next) {
+      final before = previous?.value;
+      final after = next.value;
+      if (before == null || after == null) return;
+      setState(() => _gains = _gains.next(before, after));
+    });
 
     return Scaffold(
       body: SafeArea(
@@ -123,10 +160,49 @@ class _PlanetPageState extends ConsumerState<PlanetPage> {
             planet: planet,
             player: player.value,
             now: _now,
+            gains: _gains,
+            burstSlot: _burstSlot,
+            burstTrigger: _burstCount,
+            traveling: _traveling,
+            onTravel: _travel,
             onSlotTap: (slot) => _onSlotTap(planet, slot),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Último ganho de cada recurso, para o "+X" que sobe nos contadores.
+class ResourceGains {
+  const ResourceGains({
+    this.energy,
+    this.oxygen,
+    this.points,
+    this.energyTick = 0,
+    this.oxygenTick = 0,
+    this.pointsTick = 0,
+  });
+
+  final String? energy;
+  final String? oxygen;
+  final String? points;
+  final int energyTick;
+  final int oxygenTick;
+  final int pointsTick;
+
+  /// Só aumentos aparecem (gastar energia não mostra nada).
+  ResourceGains next(PlayerStats before, PlayerStats after) {
+    final energyUp = after.energy - before.energy;
+    final oxygenUp = after.oxygen - before.oxygen;
+    final pointsUp = after.totalPoints - before.totalPoints;
+    return ResourceGains(
+      energy: energyUp >= 0.05 ? '+${formatResource(energyUp)}' : energy,
+      oxygen: oxygenUp >= 0.05 ? '+${formatResource(oxygenUp)}' : oxygen,
+      points: pointsUp > 0 ? '+$pointsUp' : points,
+      energyTick: energyUp >= 0.05 ? energyTick + 1 : energyTick,
+      oxygenTick: oxygenUp >= 0.05 ? oxygenTick + 1 : oxygenTick,
+      pointsTick: pointsUp > 0 ? pointsTick + 1 : pointsTick,
     );
   }
 }
@@ -136,12 +212,22 @@ class _PlanetContent extends ConsumerWidget {
     required this.planet,
     required this.player,
     required this.now,
+    required this.gains,
+    required this.burstSlot,
+    required this.burstTrigger,
+    required this.traveling,
+    required this.onTravel,
     required this.onSlotTap,
   });
 
   final PlanetState planet;
   final PlayerStats? player;
   final DateTime now;
+  final ResourceGains gains;
+  final int? burstSlot;
+  final int burstTrigger;
+  final bool traveling;
+  final VoidCallback onTravel;
   final ValueChanged<int> onSlotTap;
 
   @override
@@ -182,7 +268,8 @@ class _PlanetContent extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               PlanetProgressBar(
-                planetName: planet.planet.name,
+                planetName:
+                    'Planeta ${planet.planet.orderIndex} · ${planet.planet.name}',
                 reforested: planet.reforestedSlots,
                 total: planet.planet.totalSlots,
                 planetAsset: Sprites.planet(planet.planet.theme),
@@ -191,58 +278,93 @@ class _PlanetContent extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: ResourceCounter(
-                      iconAsset: Sprites.energy,
-                      label: 'Energia',
-                      value: player == null
-                          ? '…'
-                          : formatResource(player.energy),
+                    child: FloatingRewardText(
+                      text: gains.energy,
+                      trigger: gains.energyTick,
+                      color: AppColors.hotPink,
+                      child: ResourceCounter(
+                        iconAsset: Sprites.energy,
+                        label: 'Energia',
+                        value: player == null
+                            ? '…'
+                            : formatResource(player.energy),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ResourceCounter(
-                      iconAsset: Sprites.oxygen,
-                      label: 'Oxigênio',
-                      value: player == null
-                          ? '…'
-                          : formatResource(player.oxygen),
+                    child: FloatingRewardText(
+                      text: gains.oxygen,
+                      trigger: gains.oxygenTick,
+                      color: AppColors.auroraTeal,
+                      child: ResourceCounter(
+                        iconAsset: Sprites.oxygen,
+                        label: 'Oxigênio',
+                        value: player == null
+                            ? '…'
+                            : formatResource(player.oxygen),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ResourceCounter(
-                      iconAsset: Sprites.points,
-                      label: 'Pontos',
-                      value: player == null ? '…' : '${player.totalPoints}',
+                    child: FloatingRewardText(
+                      text: gains.points,
+                      trigger: gains.pointsTick,
+                      child: ResourceCounter(
+                        iconAsset: Sprites.points,
+                        label: 'Pontos',
+                        value: player == null ? '…' : '${player.totalPoints}',
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              PlanetView(
-                totalSlots: planet.planet.totalSlots,
-                theme: planet.planet.theme,
-                trees: {
-                  for (final entry in planet.trees.entries)
-                    entry.key: PlanetSlotTree(
-                      speciesId: entry.value.speciesId,
-                      growth: entry.value.growth(now),
-                    ),
-                },
-                onSlotTap: onSlotTap,
-                lumiMood: lumi.mood,
-                lumiTargetSlot: lumi.targetSlot,
-                loadingSlot: plantingSlot,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 600),
+                switchInCurve: Curves.easeOutBack,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.85, end: 1.0).animate(animation),
+                    child: child,
+                  ),
+                ),
+                child: PlanetView(
+                  key: ValueKey(planet.userPlanetId),
+                  totalSlots: planet.planet.totalSlots,
+                  theme: planet.planet.theme,
+                  trees: {
+                    for (final entry in planet.trees.entries)
+                      entry.key: PlanetSlotTree(
+                        speciesId: entry.value.speciesId,
+                        growth: entry.value.growth(now),
+                      ),
+                  },
+                  onSlotTap: onSlotTap,
+                  lumiMood: lumi.mood,
+                  lumiTargetSlot: lumi.targetSlot,
+                  loadingSlot: plantingSlot,
+                  burstSlot: burstSlot,
+                  burstTrigger: burstTrigger,
+                ),
               ),
               const SizedBox(height: 16),
-              if (planet.isCompleted)
+              if (planet.isCompleted) ...[
                 const MessageBanner(
                   type: MessageBannerType.info,
-                  message:
-                      'Planeta concluído! O próximo planeta chega em breve.',
-                )
-              else
+                  message: 'Planeta 100% reflorestado! Hora de seguir viagem.',
+                ),
+                const SizedBox(height: 12),
+                EcoButton(
+                  label: 'Ir para o próximo planeta',
+                  icon: Icons.rocket_launch_outlined,
+                  isLoading: traveling,
+                  onPressed: onTravel,
+                ),
+              ] else
                 Text(
                   'Toque numa região poluída para plantar. '
                   'Caminhe para ganhar energia.',

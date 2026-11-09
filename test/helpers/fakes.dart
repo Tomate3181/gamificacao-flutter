@@ -7,6 +7,7 @@ import 'package:ecoplanet/features/missions/domain/mission.dart';
 import 'package:ecoplanet/features/planet/data/planet_repository.dart';
 import 'package:ecoplanet/features/planet/domain/planet_models.dart';
 import 'package:ecoplanet/features/player/data/player_repository.dart';
+import 'package:ecoplanet/features/player/domain/offline_report.dart';
 import 'package:ecoplanet/features/player/domain/player_stats.dart';
 import 'package:ecoplanet/features/profile/data/profile_repository.dart';
 import 'package:ecoplanet/features/profile/domain/profile_summary.dart';
@@ -34,6 +35,25 @@ class FakePlayerRepository implements PlayerRepository {
   @override
   Future<({double collected, double oxygen})> collectOxygen() async =>
       (collected: 0.0, oxygen: stats.oxygen);
+
+  /// Relatório devolvido pela próxima coleta offline (null = nada a coletar).
+  OfflineReport? offlineReport;
+  int offlineCalls = 0;
+
+  @override
+  Future<OfflineReport> collectOfflineOxygen() async {
+    offlineCalls++;
+    final report = offlineReport;
+    offlineReport = null;
+    return report ??
+        OfflineReport(
+          away: Duration.zero,
+          counted: Duration.zero,
+          offlineRate: 0.5,
+          oxygenGained: 0,
+          oxygen: stats.oxygen,
+        );
+  }
 }
 
 class FakePlanetRepository implements PlanetRepository {
@@ -59,20 +79,26 @@ class FakePlanetRepository implements PlanetRepository {
     ),
   ];
 
+  /// Planeta devolvido por fetchCurrent (troque para simular o próximo).
+  Planet planet = const Planet(
+    id: 1,
+    orderIndex: 1,
+    name: 'Deserto Esquecido',
+    theme: 'desert',
+    totalSlots: 10,
+    baseCost: 10,
+  );
+
+  /// Quando existe, o próximo plantio conclui o planeta.
+  PlanetPreview? completeWith;
+
   @override
-  Future<PlanetState> fetchCurrent(String userId) async => const PlanetState(
-    userPlanetId: 'up-1',
-    planet: Planet(
-      id: 1,
-      orderIndex: 1,
-      name: 'Deserto Esquecido',
-      theme: 'desert',
-      totalSlots: 100,
-      baseCost: 10,
-    ),
+  Future<PlanetState> fetchCurrent(String userId) async => PlanetState(
+    userPlanetId: 'up-${planet.id}',
+    planet: planet,
     reforestedSlots: 0,
     isCompleted: false,
-    trees: {},
+    trees: const {},
     species: species,
   );
 
@@ -95,7 +121,9 @@ class FakePlanetRepository implements PlanetRepository {
       energy: 40.0,
       totalPoints: 0,
       reforestedSlots: plantCalls.length,
-      planetCompleted: false,
+      planetCompleted: completeWith != null,
+      pointsEarned: completeWith != null ? 100 : 0,
+      nextPlanet: completeWith,
       achievements: const <UnlockedAchievement>[],
     );
   }
@@ -108,13 +136,43 @@ class FakeShopRepository implements ShopRepository {
     ShopItem(
       id: 3,
       category: UpgradeCategory.cost,
+      branch: UpgradeBranch.cost,
       name: 'Sementes Eficientes',
       description: 'Reduz a energia necessária para plantar.',
-      maxLevel: 10,
+      maxLevel: 5,
       baseCost: 50,
       costMultiplier: 1.5,
-      effect: 0.05,
+      effect: 0.04,
       level: 0,
+    ),
+    ShopItem(
+      id: 7,
+      category: UpgradeCategory.cost,
+      branch: UpgradeBranch.cost,
+      name: 'Solo Fértil',
+      description: 'Solo preparado: plantar custa menos energia.',
+      maxLevel: 5,
+      baseCost: 200,
+      costMultiplier: 1.6,
+      effect: 0.03,
+      level: 0,
+      tier: 2,
+      parentId: 3,
+    ),
+    ShopItem(
+      id: 9,
+      category: UpgradeCategory.offlineHours,
+      branch: UpgradeBranch.offline,
+      name: 'Vigília da Lumi',
+      description: 'A Lumi cuida do planeta por mais 2 horas por nível.',
+      maxLevel: 3,
+      baseCost: 1000,
+      costMultiplier: 1.8,
+      effect: 2,
+      level: 0,
+      tier: 3,
+      branchSlot: -1,
+      parentId: 3,
     ),
   ];
 

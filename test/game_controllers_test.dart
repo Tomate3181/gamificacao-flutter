@@ -77,11 +77,18 @@ void main() {
         .buy(3);
 
     expect(failure, isNull);
-    expect(container.read(shopControllerProvider).value!.single.level, 1);
+    expect(
+      container
+          .read(shopControllerProvider)
+          .value!
+          .firstWhere((item) => item.id == 3)
+          .level,
+      1,
+    );
     expect(container.read(playerControllerProvider).value!.oxygen, 30);
     expect(
       container.read(upgradeBonusProvider(UpgradeCategory.cost)),
-      closeTo(0.05, 1e-9),
+      closeTo(0.04, 1e-9),
     );
   });
 

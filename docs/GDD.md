@@ -19,10 +19,10 @@ Este é o documento de referência do projeto. Ele junta a v0.1 e a v0.2. Em cas
 1. Jogador abre o app e vê o planeta atual (imagem fixa, parcialmente visível), com a barra de progresso no topo.
 2. Caminha (pedômetro) e ganha **Energia Verde**.
 3. Toca em regiões poluídas e gasta energia para plantar árvores. Cada árvore aumenta o % do planeta.
-4. Árvores geram **Oxigênio** mesmo com o app fechado (progresso offline fica para o polimento).
+4. Árvores geram **Oxigênio** mesmo com o app fechado: fora do app rendem 50% por até 8 horas (o ramo Noite da loja melhora as duas coisas).
 5. Completa missões ecológicas para bônus de energia e pontos.
 6. Ao chegar a 100%, o planeta é concluído, dá recompensa e libera o próximo.
-7. Upgrades reduzem custo, aumentam produção e diminuem o tempo de crescimento.
+7. A árvore de upgrades reduz custo, aumenta produção e energia, diminui o tempo de crescimento e melhora o rendimento offline.
 
 ## 3. Recursos
 
@@ -34,12 +34,12 @@ Este é o documento de referência do projeto. Ele junta a v0.1 e a v0.2. Em cas
 
 ## 4. Regiões e planetas
 
-- Planeta é uma **imagem fixa**, dividida em regiões plantáveis (grade de 10x10 = 100 regiões no planeta 1).
+- Planeta é uma **imagem fixa**, dividida em regiões plantáveis numa grade quase quadrada.
+- Decisão de 09/11/2026 (fase 4): o planeta 1 começa pequeno, com **10 regiões**. Cada planeta seguinte tem **+50% de regiões** (teto de 200) e **+30% de custo base**: 10, 15, 23, 34, 51, 76…
 - Cada região começa poluída. Plantar transforma a região em verde.
-- Progresso do planeta = regiões reflorestadas / total.
-- Planetas seguintes: +20% de regiões e +30% de custo base.
+- Progresso do planeta = regiões reflorestadas / total. Ao chegar em 100%: +100 pontos x número do planeta e viagem para o próximo.
 - Cada planeta tem tema visual (deserto, floresta, ilha, tundra, montanha).
-- Sem fim: o ciclo continua indefinidamente.
+- Sem fim: depois do 5º planeta o servidor cria o próximo, com os temas em ciclo e numeral no nome (*Deserto Esquecido II*).
 
 ## 5. Espécies de árvore (8)
 
@@ -56,17 +56,29 @@ Este é o documento de referência do projeto. Ele junta a v0.1 e a v0.2. Em cas
 
 Cada espécie tem bônus de planeta, para o jogador trocar de espécie conforme o planeta.
 
-## 6. Upgrades (Loja)
+## 6. Upgrades (Loja): árvore radial
 
-Categorias, cada uma com níveis (1 a 10) e custo crescente (1.5x por nível):
+Decisão de 09/11/2026 (fase 4): a loja virou uma **árvore radial**. A Lumi fica no centro e 5 ramos saem dela, a cada 72 graus. Cada ramo tem 4 anéis e 5 nós:
 
-- **Crescimento:** reduz o tempo de crescimento das árvores.
-- **Produção:** aumenta o oxigênio gerado.
-- **Custo:** reduz a energia para plantar.
-- **Automação:** drones que plantam sozinhos.
-- **Energia:** aumenta a energia por passo.
+- Anel 1: raiz do ramo (5 níveis).
+- Anel 2: reforço da raiz (5 níveis).
+- Anel 3: dois nós, um que aprofunda o ramo e outro que **cruza** com outro efeito (3 níveis cada).
+- Anel 4: nó final, caro e forte (1 nível).
 
-Upgrades são permanentes e valem para todos os planetas.
+Um nó só pode ser comprado quando o **pai tem pelo menos 1 nível**, e o servidor confere isso. O custo cresce por nível (1,5x a 1,8x).
+
+| Ramo | Efeito principal | Nó que cruza |
+|---|---|---|
+| Produção | +% oxigênio | Orvalho Noturno (offline) |
+| Crescimento | -% tempo de crescimento | Seiva Doce (produção) |
+| Custo | -% energia para plantar | Mochila de Sementes (energia) |
+| Energia | +% energia por passo | Atalho Verde (custo) |
+| Noite | +% rendimento offline | Estrelas Guias (crescimento) e Vigília da Lumi (+2 h de coleta offline por nível) |
+
+- O efeito de cada categoria é a soma de todos os nós dela, de qualquer ramo.
+- Tetos: custo e crescimento até -75%; rendimento offline até 100%.
+- **Automação** (drones) ficou fora da árvore.
+- Upgrades são permanentes e valem para todos os planetas.
 
 ## 7. Missões (gameplay)
 
@@ -120,8 +132,8 @@ Lumi é a companheira do jogador. É um bichinho pequeno, dourado, inspirado no 
 - **Destaque:** dourado para ações e recompensas.
 - **Planeta e verdes:** tons saturados que contrastam com o céu escuro.
 - **Estilo:** fundo pintado, sprites em pixel, partículas de brilho e folhas.
-- **Fontes:** a definir.
-- **Logo:** a definir.
+- **Fontes:** Pixelify Sans (licença OFL) nos títulos grandes. Números, botões e texto corrido usam a fonte padrão, para a leitura ficar clara.
+- **Logo:** planeta meio reflorestado e meio poluído, com uma muda no topo, anel de aurora e a Lumi (48x48, gerado pelo script de sprites).
 
 ## 12. Telas e navegação
 
@@ -188,7 +200,7 @@ Todos recebem dados por parâmetros.
 
 - RLS ativo em todas as tabelas.
 - Usuário só lê e escreve as próprias linhas em `user_*` e `profiles`.
-- Energia, oxigênio e pontos **não** são alterados direto pelo cliente. Ações passam por funções RPC que validam no servidor: `plant_tree`, `buy_upgrade`, `add_step_energy`, `collect_oxygen`, `start_mission`, `complete_mission`, `collect_offline_oxygen` (esta última na fase de polimento).
+- Energia, oxigênio e pontos **não** são alterados direto pelo cliente. Ações passam por funções RPC que validam no servidor: `plant_tree`, `buy_upgrade`, `add_step_energy`, `collect_oxygen`, `collect_offline_oxygen`, `start_mission`, `complete_mission`.
 - Conquistas são desbloqueadas no servidor ao plantar e ao resgatar missões.
 - `user_missions` com constraint única `(user_id, mission_id)`, para não dar pontos repetidos.
 - Ranking vem de view ou função que calcula a pontuação a partir do banco.
@@ -197,33 +209,34 @@ Todos recebem dados por parâmetros.
 
 - 100 passos = 1 energia.
 - Muda custa 10 energia.
-- Upgrade nível 1: 50 oxigênio, cresce 1.5x por nível.
-- Planeta 1 deve levar cerca de 15 a 30 minutos de jogo ativo.
+- Raízes da árvore de upgrades: 50 oxigênio no nível 1, crescendo 1,5x por nível.
+- Planeta 1 tem 10 regiões: dá para concluir na primeira sessão e já ver a viagem para o próximo.
+- Oxigênio offline: 50% do normal, por até 8 horas (melhorável no ramo Noite).
 
 ## 17. Roadmap
 
 1. **Fase 1, base:** projeto Flutter, GoRouter, tema visual, Auth com Supabase, tabelas e RLS.
 2. **Fase 2, núcleo:** tela do planeta com plantio por toque, barra de progresso, energia por passos (ou simulação), Lumi em estados básicos, loja com 2 ou 3 upgrades, RPCs `plant_tree` e `buy_upgrade`.
 3. **Fase 3, gamificação:** missões (lista, detalhes, conclusão única), conquistas, ranking global e perfil.
-4. **Fase 4, polimento:** identidade visual final, sprites completos, oxigênio idle e progresso offline, ciclo de planetas, efeitos visuais, modo demo, README.
+4. **Fase 4, polimento:** identidade visual final, sprites completos, oxigênio idle e progresso offline, ciclo de planetas, efeitos visuais, modo demo, README. Também entrou a árvore radial de upgrades.
 
 ## 18. Requisitos do curso (checklist)
 
-- [ ] Splash com logo e redirecionamento por auth
-- [ ] Login e cadastro com Supabase Auth, erros claros
-- [ ] Home com saudação, pontos, missões concluídas, missão em destaque, lista e progresso
-- [ ] Detalhes da missão com parâmetro pela rota
-- [ ] Conquistas com bloqueio e condição
-- [ ] Ranking global do banco, top 3 destacado e posição do usuário
-- [ ] Perfil com dados e logout
-- [ ] GoRouter com proteção de rotas
-- [ ] 3 ou mais widgets personalizados reutilizáveis
-- [ ] PostgreSQL via Supabase com RLS
-- [ ] Indicadores de carregamento e mensagens para listas vazias e erros
-- [ ] Atualização visual após concluir missão
+- [x] Splash com logo e redirecionamento por auth
+- [x] Login e cadastro com Supabase Auth, erros claros
+- [x] Home com saudação, pontos, missões concluídas, missão em destaque, lista e progresso
+- [x] Detalhes da missão com parâmetro pela rota
+- [x] Conquistas com bloqueio e condição
+- [x] Ranking global do banco, top 3 destacado e posição do usuário
+- [x] Perfil com dados e logout
+- [x] GoRouter com proteção de rotas
+- [x] 3 ou mais widgets personalizados reutilizáveis
+- [x] PostgreSQL via Supabase com RLS
+- [x] Indicadores de carregamento e mensagens para listas vazias e erros
+- [x] Atualização visual após concluir missão
 
 ## 19. Pontos em aberto
 
-- Nome final da fonte e logo.
-- Pipeline de sprites (SpriteCook ou outro) e paleta final.
-- Balanceamento da economia, validado na prática.
+- Balanceamento da economia, validado na prática (missões, custos da árvore, ritmo dos planetas).
+- Refinar a árvore de upgrades: mais nós, nós com efeitos novos, talvez Automação.
+- Sensores extras do GDD (sacudir o celular, luz ambiente) ficaram fora do escopo.

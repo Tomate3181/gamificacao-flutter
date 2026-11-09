@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/sprites.dart';
 import 'lumi_sprite.dart';
+import 'reward_burst.dart';
 import 'tree_sprite.dart';
 
 /// Árvore desenhada numa região.
@@ -19,6 +20,7 @@ class PlanetSlotTree {
 /// Superfície do planeta dividida em regiões plantáveis, com a Lumi por cima.
 ///
 /// Regiões sem árvore aparecem poluídas; com árvore, reflorestadas.
+/// A grade fica quase quadrada: planetas pequenos têm regiões grandes.
 class PlanetView extends StatefulWidget {
   const PlanetView({
     super.key,
@@ -29,7 +31,9 @@ class PlanetView extends StatefulWidget {
     required this.lumiMood,
     this.lumiTargetSlot,
     this.loadingSlot,
-    this.columns = 10,
+    this.columns,
+    this.burstSlot,
+    this.burstTrigger,
   });
 
   final int totalSlots;
@@ -41,7 +45,31 @@ class PlanetView extends StatefulWidget {
   final LumiMood lumiMood;
   final int? lumiTargetSlot;
   final int? loadingSlot;
-  final int columns;
+
+  /// Colunas da grade (null = automático pelo número de regiões).
+  final int? columns;
+
+  /// Região onde soltar folhas e brilhos (ex.: acabou de ser plantada).
+  final int? burstSlot;
+
+  /// Muda a cada explosão nova.
+  final Object? burstTrigger;
+
+  /// Colunas para [slots] regiões: perto da raiz quadrada (entre 3 e 15),
+  /// escolhendo a que deixa menos espaço sobrando na última linha.
+  static int autoColumns(int slots) {
+    final start = math.sqrt(slots).ceil().clamp(3, 15);
+    var best = start;
+    var bestEmpty = slots;
+    for (var columns = start; columns <= math.min(start + 2, 15); columns++) {
+      final empty = (slots / columns).ceil() * columns - slots;
+      if (empty < bestEmpty) {
+        best = columns;
+        bestEmpty = empty;
+      }
+    }
+    return best;
+  }
 
   @override
   State<PlanetView> createState() => _PlanetViewState();
@@ -75,20 +103,22 @@ class _PlanetViewState extends State<PlanetView> {
 
   @override
   Widget build(BuildContext context) {
-    final rows = (widget.totalSlots / widget.columns).ceil();
+    final columns = widget.columns ?? PlanetView.autoColumns(widget.totalSlots);
+    final rows = (widget.totalSlots / columns).ceil();
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final tile = constraints.maxWidth / widget.columns;
-        final width = tile * widget.columns;
+        final tile = constraints.maxWidth / columns;
+        final width = tile * columns;
         final height = tile * rows;
-        final lumiSize = math.max(tile * 1.2, 36.0);
+        final lumiSize = (tile * 1.2).clamp(36.0, 72.0);
+        final burst = widget.burstSlot;
 
         final target = widget.lumiTargetSlot;
         final Offset lumiCenter = target != null
             ? Offset(
-                (target % widget.columns + 1) * tile,
-                (target ~/ widget.columns) * tile + tile * 0.2,
+                (target % columns + 1) * tile,
+                (target ~/ columns) * tile + tile * 0.2,
               )
             : Offset(_wanderPoint.dx * width, _wanderPoint.dy * height);
 
@@ -100,6 +130,7 @@ class _PlanetViewState extends State<PlanetView> {
             children: [
               Container(
                 decoration: BoxDecoration(
+                  color: AppColors.skyMid,
                   border: Border.all(color: AppColors.outline, width: 2),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -108,18 +139,37 @@ class _PlanetViewState extends State<PlanetView> {
                   physics: const NeverScrollableScrollPhysics(),
                   padding: EdgeInsets.zero,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: widget.columns,
+                    crossAxisCount: columns,
                   ),
-                  itemCount: widget.totalSlots,
-                  itemBuilder: (context, index) => _Slot(
-                    index: index,
-                    theme: widget.theme,
-                    tree: widget.trees[index],
-                    isLoading: widget.loadingSlot == index,
-                    onTap: () => widget.onSlotTap(index),
-                  ),
+                  // Completa a última linha com terreno que não dá para plantar.
+                  itemCount: rows * columns,
+                  itemBuilder: (context, index) => index >= widget.totalSlots
+                      ? _Filler(theme: widget.theme, index: index)
+                      : _Slot(
+                          index: index,
+                          theme: widget.theme,
+                          tree: widget.trees[index],
+                          isLoading: widget.loadingSlot == index,
+                          onTap: () => widget.onSlotTap(index),
+                        ),
                 ),
               ),
+              if (burst != null)
+                Positioned(
+                  left: (burst % columns) * tile,
+                  top: (burst ~/ columns) * tile,
+                  width: tile,
+                  height: tile,
+                  child: IgnorePointer(
+                    child: RewardBurst(
+                      trigger: widget.burstTrigger,
+                      particles: const [Sprites.leaf, Sprites.oxygen],
+                      distance: math.max(tile, 40),
+                      particleSize: (tile * 0.35).clamp(10.0, 20.0),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
               AnimatedPositioned(
                 duration: Duration(milliseconds: target != null ? 700 : 2400),
                 curve: Curves.easeInOut,
@@ -201,6 +251,35 @@ class _Slot extends StatelessWidget {
                 size: size,
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Canto fora da área plantável: terreno escurecido, sem toque.
+class _Filler extends StatelessWidget {
+  const _Filler({required this.theme, required this.index});
+
+  final String theme;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+              Sprites.tile(theme, restored: false, slot: index),
+            ),
+            fit: BoxFit.fill,
+            filterQuality: FilterQuality.none,
+            colorFilter: ColorFilter.mode(
+              AppColors.skyDeep.withValues(alpha: 0.65),
+              BlendMode.srcATop,
+            ),
           ),
         ),
       ),

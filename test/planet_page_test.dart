@@ -29,8 +29,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Deserto Esquecido'), findsOneWidget);
-    expect(find.text('0 de 100 regiões reflorestadas'), findsOneWidget);
+    expect(find.text('Planeta 1 · Deserto Esquecido'), findsOneWidget);
+    expect(find.text('0 de 10 regiões reflorestadas'), findsOneWidget);
     expect(find.text('50'), findsOneWidget); // energia
     expect(find.text('80'), findsOneWidget); // oxigênio
 
@@ -46,7 +46,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(planetRepo.plantCalls, [(0, 1)]);
-    expect(find.text('1 de 100 regiões reflorestadas'), findsOneWidget);
+    expect(find.text('1 de 10 regiões reflorestadas'), findsOneWidget);
     expect(find.text('40'), findsOneWidget);
     expect(find.bySemanticsLabel('Região 1, reflorestada'), findsOneWidget);
 

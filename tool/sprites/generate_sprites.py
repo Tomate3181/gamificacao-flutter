@@ -853,12 +853,85 @@ def icon_sprites() -> dict[str, Image.Image]:
 
 
 # ---------------------------------------------------------------------------
+# Logo (48x48): planeta metade reflorestado, metade poluído, com uma muda no
+# topo, anel de aurora em órbita e a Lumi voando ao lado.
+# ---------------------------------------------------------------------------
+def polluted(color: RGBA) -> RGBA:
+    """Versão acinzentada e amarronzada de uma cor (região poluída)."""
+    r, g, b, a = color
+    gray = (r * 0.3 + g * 0.59 + b * 0.11)
+    return (
+        int(gray * 0.75 + 0x6B * 0.25),
+        int(gray * 0.65 + 0x5A * 0.25),
+        int(gray * 0.55 + 0x4E * 0.25),
+        a,
+    )
+
+
+def logo(images: dict[str, Image.Image]) -> Image.Image:
+    size = 48
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    outline = OUTLINE
+    ring_light, ring_dark = hex_rgba("#2EC4B6"), hex_rgba("#1B7F78")
+
+    # Anel em elipse inclinada: metade de trás antes do planeta, metade da
+    # frente depois.
+    cx, cy, rx, ry, tilt = 23.5, 28.5, 22.0, 6.5, -0.28
+    back, front = [], []
+    steps = 360
+    for i in range(steps):
+        t = 2 * math.pi * i / steps
+        x0, y0 = rx * math.cos(t), ry * math.sin(t)
+        x = cx + x0 * math.cos(tilt) - y0 * math.sin(tilt)
+        y = cy + x0 * math.sin(tilt) + y0 * math.cos(tilt)
+        point = (int(round(x)), int(round(y)))
+        (back if math.sin(t) < 0 else front).append(point)
+
+    def draw_ring(points: list[tuple[int, int]], color: RGBA) -> None:
+        for x, y in points:
+            if 0 <= x < size and 0 <= y < size:
+                canvas.putpixel((x, y), color)
+
+    draw_ring(back, ring_dark)
+
+    # Planeta: lado esquerdo verde (floresta), direito poluído.
+    base = images["planets/planet_forest"]
+    planet_img = base.copy()
+    for y in range(base.height):
+        for x in range(base.width):
+            pixel = base.getpixel((x, y))
+            if pixel[3] == 0 or pixel[:3] == outline[:3]:
+                continue
+            # Divisa em diagonal suave, com dentes de pixel.
+            if x + (y % 3) * 0.6 > 17 + (y - 16) * 0.25:
+                planet_img.putpixel((x, y), polluted(pixel))
+    canvas.alpha_composite(planet_img, (8, 13))
+
+    draw_ring(front, ring_light)
+    # Contorno escuro só por fora do anel da frente.
+    for x, y in front:
+        for nx, ny in ((x, y + 1),):
+            if 0 <= nx < size and 0 <= ny < size and canvas.getpixel((nx, ny))[3] == 0:
+                canvas.putpixel((nx, ny), outline)
+
+    # Muda no topo do planeta e Lumi feliz no canto.
+    canvas.alpha_composite(images["trees/sprout"], (13, 1))
+    canvas.alpha_composite(images["lumi/lumi_happy_1"], (31, 0))
+    return canvas
+
+
+def logo_sprites(images: dict[str, Image.Image]) -> dict[str, Image.Image]:
+    return {"logo/logo": logo(images)}
+
+
+# ---------------------------------------------------------------------------
 # Saída
 # ---------------------------------------------------------------------------
 def all_sprites() -> dict[str, Image.Image]:
     images: dict[str, Image.Image] = {}
     for builder in (lumi_sprites, tree_sprites, tile_sprites, planet_sprites, icon_sprites):
         images.update(builder())
+    images.update(logo_sprites(images))
     return images
 
 

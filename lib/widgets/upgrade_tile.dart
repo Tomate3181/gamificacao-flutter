@@ -16,6 +16,9 @@ class UpgradeTile extends StatelessWidget {
     required this.canAfford,
     required this.onBuy,
     this.isLoading = false,
+    this.accentColor = AppColors.auroraTeal,
+    this.lockedLabel,
+    this.subtitle,
   });
 
   final IconData icon;
@@ -32,6 +35,16 @@ class UpgradeTile extends StatelessWidget {
   final bool canAfford;
   final VoidCallback onBuy;
   final bool isLoading;
+
+  /// Cor do ícone e da barra (cor do ramo na árvore).
+  final Color accentColor;
+
+  /// Ex.: "Compre Folhas Largas antes". Quando existe, o botão fica
+  /// desligado com esse texto.
+  final String? lockedLabel;
+
+  /// Linha extra abaixo do nível. Ex.: "Ramo Produção · +10% por nível".
+  final String? subtitle;
 
   bool get isMaxed => level >= maxLevel;
 
@@ -54,10 +67,10 @@ class UpgradeTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.auroraTeal.withValues(alpha: 0.15),
+                  color: accentColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: AppColors.auroraTeal),
+                child: Icon(icon, color: accentColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -71,7 +84,9 @@ class UpgradeTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Nível $level de $maxLevel',
+                      subtitle == null
+                          ? 'Nível $level de $maxLevel'
+                          : 'Nível $level de $maxLevel · $subtitle',
                       style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textMuted,
                       ),
@@ -95,7 +110,7 @@ class UpgradeTile extends StatelessWidget {
               value: maxLevel == 0 ? 0 : level / maxLevel,
               minHeight: 6,
               backgroundColor: AppColors.skyDeep,
-              color: AppColors.auroraLilac,
+              color: accentColor,
             ),
           ),
           const SizedBox(height: 12),
@@ -103,7 +118,10 @@ class UpgradeTile extends StatelessWidget {
             height: 44,
             child: FilledButton(
               style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-              onPressed: isMaxed || !canAfford || isLoading ? null : onBuy,
+              onPressed:
+                  isMaxed || !canAfford || isLoading || lockedLabel != null
+                  ? null
+                  : onBuy,
               child: isLoading
                   ? const SizedBox.square(
                       dimension: 20,
@@ -115,6 +133,8 @@ class UpgradeTile extends StatelessWidget {
                   : Text(
                       isMaxed
                           ? 'Nível máximo'
+                          : lockedLabel != null
+                          ? lockedLabel!
                           : canAfford
                           ? 'Melhorar por $costLabel'
                           : 'Oxigênio insuficiente · $costLabel',

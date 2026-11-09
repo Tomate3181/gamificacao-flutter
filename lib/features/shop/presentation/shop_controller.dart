@@ -22,15 +22,30 @@ class BuyingUpgrade extends Notifier<int?> {
   void set(int? upgradeId) => state = upgradeId;
 }
 
+/// Nó escolhido na árvore (null = o sugerido).
+final selectedUpgradeIdProvider = NotifierProvider<SelectedUpgrade, int?>(
+  SelectedUpgrade.new,
+);
+
+class SelectedUpgrade extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void select(int? upgradeId) => state = upgradeId;
+}
+
+/// Árvore de upgrades montada a partir da loja (null enquanto carrega).
+final upgradeTreeProvider = Provider<UpgradeTree?>((ref) {
+  final items = ref.watch(shopControllerProvider).value;
+  return items == null ? null : UpgradeTree(items);
+});
+
 /// Bônus atual por categoria. Vale 0 enquanto a loja carrega.
 final upgradeBonusProvider = Provider.family<double, UpgradeCategory>((
   ref,
   category,
 ) {
-  final items = ref.watch(shopControllerProvider).value ?? const [];
-  return items
-      .where((item) => item.category == category)
-      .fold(0.0, (sum, item) => sum + item.bonus);
+  return ref.watch(upgradeTreeProvider)?.bonus(category) ?? 0;
 });
 
 class ShopController extends AsyncNotifier<List<ShopItem>> {

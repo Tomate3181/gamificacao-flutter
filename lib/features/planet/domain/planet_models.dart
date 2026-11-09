@@ -17,6 +17,44 @@ class Planet {
   final double baseCost;
 }
 
+/// Resumo do próximo planeta, mostrado ao concluir o atual.
+class PlanetPreview {
+  const PlanetPreview({
+    required this.orderIndex,
+    required this.name,
+    required this.theme,
+    required this.totalSlots,
+  });
+
+  final int orderIndex;
+  final String name;
+  final String theme;
+  final int totalSlots;
+
+  static PlanetPreview? fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    return PlanetPreview(
+      orderIndex: (json['order_index'] as num).toInt(),
+      name: json['name'] as String,
+      theme: json['theme'] as String,
+      totalSlots: (json['total_slots'] as num).toInt(),
+    );
+  }
+}
+
+/// Planeta concluído: pontos ganhos e o que vem depois.
+class PlanetCompletion {
+  const PlanetCompletion({
+    required this.planetName,
+    required this.pointsEarned,
+    this.next,
+  });
+
+  final String planetName;
+  final int pointsEarned;
+  final PlanetPreview? next;
+}
+
 /// Espécie de árvore do catálogo (seção 5 do GDD).
 class TreeSpecies {
   const TreeSpecies({

@@ -76,6 +76,7 @@ class _SpeciesPicker extends ConsumerWidget {
                       return _SpeciesTile(
                         species: item,
                         cost: cost,
+                        growTime: ref.watch(speciesGrowTimeProvider(item)),
                         canAfford: canAfford,
                         onTap: () => context.pop(item.id),
                       );
@@ -92,12 +93,16 @@ class _SpeciesTile extends StatelessWidget {
   const _SpeciesTile({
     required this.species,
     required this.cost,
+    required this.growTime,
     required this.canAfford,
     required this.onTap,
   });
 
   final TreeSpecies species;
   final double cost;
+
+  /// Já com o bônus de Crescimento.
+  final Duration growTime;
   final bool canAfford;
   final VoidCallback onTap;
 
@@ -132,7 +137,7 @@ class _SpeciesTile extends StatelessWidget {
                       ),
                       Text(
                         '${formatResource(species.oxygenPerSec)} O₂/s · '
-                        'cresce em ${_formatDuration(species.growSeconds)}',
+                        'cresce em ${_formatDuration(growTime.inSeconds)}',
                         style: muted,
                       ),
                     ],

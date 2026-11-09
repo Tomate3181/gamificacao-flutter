@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/data/supabase_guard.dart';
+import '../domain/offline_report.dart';
 import '../domain/player_stats.dart';
 
 final playerRepositoryProvider = Provider<PlayerRepository>(
@@ -13,6 +14,9 @@ abstract interface class PlayerRepository {
 
   /// Coleta o oxigênio das árvores prontas. Retorna (coletado, total).
   Future<({double collected, double oxygen})> collectOxygen();
+
+  /// Coleta o oxigênio do tempo em que o app ficou fechado.
+  Future<OfflineReport> collectOfflineOxygen();
 }
 
 class SupabasePlayerRepository implements PlayerRepository {
@@ -44,6 +48,21 @@ class SupabasePlayerRepository implements PlayerRepository {
           await _client.rpc('collect_oxygen') as Map<String, dynamic>;
       return (
         collected: readNum(result['oxygen_collected']),
+        oxygen: readNum(result['oxygen']),
+      );
+    });
+  }
+
+  @override
+  Future<OfflineReport> collectOfflineOxygen() {
+    return guardSupabase(() async {
+      final result =
+          await _client.rpc('collect_offline_oxygen') as Map<String, dynamic>;
+      return OfflineReport(
+        away: Duration(seconds: readNum(result['seconds_away']).round()),
+        counted: Duration(seconds: readNum(result['seconds_counted']).round()),
+        offlineRate: readNum(result['offline_rate']),
+        oxygenGained: readNum(result['oxygen_gained']),
         oxygen: readNum(result['oxygen']),
       );
     });

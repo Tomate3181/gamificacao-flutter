@@ -41,11 +41,26 @@ final speciesCostProvider = Provider.family<double, TreeSpecies>((
   );
 });
 
+/// Tempo de crescimento de cada espécie, já com o bônus de Crescimento.
+final speciesGrowTimeProvider = Provider.family<Duration, TreeSpecies>((
+  ref,
+  species,
+) {
+  final growthBonus = ref.watch(upgradeBonusProvider(UpgradeCategory.growth));
+  return Economy.growTime(species.growSeconds, growthBonus: growthBonus);
+});
+
 typedef PlantOutcome = ({
   GameFailure? failure,
-  bool planetCompleted,
+  PlanetCompletion? completion,
   List<UnlockedAchievement> achievements,
 });
+
+const PlantOutcome _nothing = (
+  failure: null,
+  completion: null,
+  achievements: <UnlockedAchievement>[],
+);
 
 class PlanetController extends AsyncNotifier<PlanetState> {
   @override
@@ -59,18 +74,24 @@ class PlanetController extends AsyncNotifier<PlanetState> {
     state = await AsyncValue.guard(build);
   }
 
+  /// Depois de concluir o planeta: carrega o próximo sem tirar o atual da
+  /// tela enquanto busca (a troca é animada na página).
+  Future<void> travelToNext() async {
+    final userId = await requireUserId(ref);
+    final next = await AsyncValue.guard(
+      () => ref.read(planetRepositoryProvider).fetchCurrent(userId),
+    );
+    if (!ref.mounted) return;
+    state = next;
+    ref.read(lumiControllerProvider.notifier).celebrate();
+  }
+
   Future<PlantOutcome> plant({
     required int slotIndex,
     required int speciesId,
   }) async {
     final planting = ref.read(plantingSlotProvider.notifier);
-    if (ref.read(plantingSlotProvider) != null) {
-      return (
-        failure: null,
-        planetCompleted: false,
-        achievements: const <UnlockedAchievement>[],
-      );
-    }
+    if (ref.read(plantingSlotProvider) != null) return _nothing;
     planting.set(slotIndex);
     ref.read(lumiControllerProvider.notifier).follow(slotIndex);
 
@@ -78,13 +99,7 @@ class PlanetController extends AsyncNotifier<PlanetState> {
       final result = await ref
           .read(planetRepositoryProvider)
           .plantTree(slotIndex: slotIndex, speciesId: speciesId);
-      if (!ref.mounted) {
-        return (
-          failure: null,
-          planetCompleted: false,
-          achievements: const <UnlockedAchievement>[],
-        );
-      }
+      if (!ref.mounted) return _nothing;
 
       final current = state.value;
       if (current != null) {
@@ -102,23 +117,26 @@ class PlanetController extends AsyncNotifier<PlanetState> {
             energy: result.energy,
             totalPoints: result.totalPoints,
           );
-      if (result.planetCompleted) {
-        ref.read(lumiControllerProvider.notifier).celebrate();
-      }
-      if (result.achievements.isNotEmpty) {
+      if (result.planetCompleted || result.achievements.isNotEmpty) {
         ref.read(lumiControllerProvider.notifier).celebrate();
       }
       syncGameProgress(ref, achievements: true);
       return (
         failure: null,
-        planetCompleted: result.planetCompleted,
+        completion: result.planetCompleted
+            ? PlanetCompletion(
+                planetName: current?.planet.name ?? 'Planeta',
+                pointsEarned: result.pointsEarned,
+                next: result.nextPlanet,
+              )
+            : null,
         achievements: result.achievements,
       );
     } on GameFailure catch (failure) {
       ref.read(lumiControllerProvider.notifier).wander();
       return (
         failure: failure,
-        planetCompleted: false,
+        completion: null,
         achievements: const <UnlockedAchievement>[],
       );
     } finally {

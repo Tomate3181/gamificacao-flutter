@@ -69,6 +69,17 @@ flutter:
     - assets/sprites/tiles/
     - assets/sprites/planets/
     - assets/sprites/icons/
+    - assets/sprites/logo/
+
+  # Fonte em pixel dos títulos (Pixelify Sans, licença SIL OFL 1.1, veja
+  # assets/fonts/OFL.txt). O arquivo é variável; declarar o peso 700 evita
+  # que o Flutter engrosse as letras na marra (o que borra o pixel).
+  fonts:
+    - family: PixelifySans
+      fonts:
+        - asset: assets/fonts/PixelifySans.ttf
+        - asset: assets/fonts/PixelifySans.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

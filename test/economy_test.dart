@@ -15,10 +15,10 @@ void main() {
       );
       // Planeta 2 custa 30% a mais.
       expect(Economy.treeCost(speciesCost: 10, planetBaseCost: 13), 13);
-      // Desconto máximo de 50%.
+      // Desconto máximo de 75% (árvore de upgrades).
       expect(
         Economy.treeCost(speciesCost: 100, planetBaseCost: 10, costBonus: 0.9),
-        50,
+        25,
       );
     });
 

@@ -9,7 +9,7 @@ final shopRepositoryProvider = Provider<ShopRepository>(
 );
 
 abstract interface class ShopRepository {
-  /// Upgrades liberados na loja, com o nível do jogador.
+  /// Nós da árvore de upgrades, com o nível do jogador.
   Future<List<ShopItem>> fetchItems(String userId);
 
   /// Compra o próximo nível. Retorna (novo nível, oxigênio restante).
@@ -28,6 +28,8 @@ class SupabaseShopRepository implements ShopRepository {
           .from('upgrades')
           .select()
           .eq('is_available', true)
+          .not('branch', 'is', null)
+          .order('tier')
           .order('id');
       final owned = await _client
           .from('user_upgrades')
@@ -44,6 +46,10 @@ class SupabaseShopRepository implements ShopRepository {
           ShopItem(
             id: (row['id'] as num).toInt(),
             category: UpgradeCategory.fromName(row['category'] as String),
+            branch: UpgradeBranch.fromName(row['branch'] as String),
+            tier: (row['tier'] as num).toInt(),
+            branchSlot: (row['branch_slot'] as num).toInt(),
+            parentId: (row['parent_id'] as num?)?.toInt(),
             name: row['name'] as String,
             description: row['description'] as String,
             maxLevel: (row['max_level'] as num).toInt(),
