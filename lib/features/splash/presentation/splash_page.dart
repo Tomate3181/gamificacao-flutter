@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/sprites.dart';
+import '../../../widgets/pixel_image.dart';
 
 /// Splash com logo provisório. Depois da animação vai para /home; se não
 /// houver sessão, o redirecionamento do GoRouter manda para /login.
@@ -59,7 +61,7 @@ class _SplashPageState extends State<SplashPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.public, size: 96, color: AppColors.leafGreen),
+                const PixelImage(Sprites.logo, size: 128),
                 const SizedBox(height: 16),
                 Text(
                   'EcoPlanet',

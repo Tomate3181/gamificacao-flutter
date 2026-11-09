@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_colors.dart';
+import '../core/theme/sprites.dart';
+import 'pixel_image.dart';
 
-/// Árvore numa região do planeta. Enquanto cresce, aparece como muda
-/// pequena que vai aumentando.
+/// Árvore numa região do planeta. Enquanto cresce, aparece como muda que
+/// vai aumentando até virar a espécie plantada.
 class TreeSprite extends StatelessWidget {
   const TreeSprite({
     super.key,
@@ -18,31 +19,24 @@ class TreeSprite extends StatelessWidget {
   final double growth;
   final double size;
 
-  static String assetFor(int speciesId) =>
-      'assets/sprites/trees/tree_$speciesId.png';
-  static const sproutAsset = 'assets/sprites/trees/sprout.png';
-
   bool get isGrown => growth >= 1;
 
   @override
   Widget build(BuildContext context) {
-    final scale = isGrown ? 1.0 : 0.45 + growth * 0.4;
+    final scale = isGrown ? 1.0 : 0.6 + growth * 0.4;
 
     return SizedBox.square(
       dimension: size,
       child: Align(
         alignment: Alignment.bottomCenter,
-        child: Image.asset(
-          isGrown ? assetFor(speciesId) : sproutAsset,
-          width: size * scale,
-          height: size * scale,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.none,
-          // Até os sprites das árvores ficarem prontos.
-          errorBuilder: (context, error, stackTrace) => Icon(
-            isGrown ? Icons.park : Icons.grass,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
+          child: PixelImage(
+            isGrown ? Sprites.tree(speciesId) : Sprites.sprout,
+            key: ValueKey(isGrown),
             size: size * scale,
-            color: isGrown ? AppColors.leafGreen : AppColors.auroraTeal,
           ),
         ),
       ),

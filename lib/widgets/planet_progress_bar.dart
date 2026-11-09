@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import 'pixel_image.dart';
 
 /// Barra de progresso do planeta, no topo da tela.
 class PlanetProgressBar extends StatelessWidget {
@@ -9,11 +10,15 @@ class PlanetProgressBar extends StatelessWidget {
     required this.planetName,
     required this.reforested,
     required this.total,
+    this.planetAsset,
   });
 
   final String planetName;
   final int reforested;
   final int total;
+
+  /// Sprite do planeta mostrado ao lado do nome.
+  final String? planetAsset;
 
   double get progress => total == 0 ? 0 : (reforested / total).clamp(0, 1);
 
@@ -21,51 +26,64 @@ class PlanetProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final percent = (progress * 100).floor();
+    final asset = planetAsset;
 
     return Semantics(
       label: '$planetName: $percent% reflorestado',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  planetName,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+          if (asset != null) ...[
+            PixelImage(asset, size: 56),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        planetName,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '$percent%',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.leafGreen,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: progress),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOut,
+                    builder: (context, value, _) => LinearProgressIndicator(
+                      value: value,
+                      minHeight: 12,
+                      backgroundColor: AppColors.skyMid,
+                      color: AppColors.leafGreen,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                '$percent%',
-                style: textTheme.titleMedium?.copyWith(
-                  color: AppColors.leafGreen,
-                  fontWeight: FontWeight.w700,
+                const SizedBox(height: 4),
+                Text(
+                  '$reforested de $total regiões reflorestadas',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(end: progress),
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOut,
-              builder: (context, value, _) => LinearProgressIndicator(
-                value: value,
-                minHeight: 12,
-                backgroundColor: AppColors.skyMid,
-                color: AppColors.leafGreen,
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$reforested de $total regiões reflorestadas',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
           ),
         ],
       ),

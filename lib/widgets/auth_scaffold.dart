@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/sprites.dart';
+import 'pixel_image.dart';
 
 /// Moldura das telas de login e cadastro: título, subtítulo e conteúdo
 /// centralizado com largura máxima (boa leitura no navegador).
@@ -30,11 +32,7 @@ class AuthScaffold extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.public,
-                    size: 56,
-                    color: AppColors.leafGreen,
-                  ),
+                  const Center(child: PixelImage(Sprites.logo, size: 80)),
                   const SizedBox(height: 16),
                   Text(
                     title,

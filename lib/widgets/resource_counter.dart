@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import 'pixel_image.dart';
 
-/// Contador de recurso (energia, oxigênio, pontos).
+/// Contador de recurso (energia, oxigênio, pontos) com ícone em pixel art.
 class ResourceCounter extends StatelessWidget {
   const ResourceCounter({
     super.key,
-    required this.icon,
+    required this.iconAsset,
     required this.label,
     required this.value,
-    required this.color,
   });
 
-  final IconData icon;
+  final String iconAsset;
   final String label;
   final String value;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,7 @@ class ResourceCounter extends StatelessWidget {
       label: '$label: $value',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.skyMid,
           borderRadius: BorderRadius.circular(12),
@@ -34,7 +33,7 @@ class ResourceCounter extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: color),
+            PixelImage(iconAsset, size: 24),
             const SizedBox(width: 8),
             Flexible(
               child: Column(

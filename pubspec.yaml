@@ -65,6 +65,10 @@ flutter:
   # Sprites em pixel art (gerados por tool/sprites/generate_sprites.py).
   assets:
     - assets/sprites/lumi/
+    - assets/sprites/trees/
+    - assets/sprites/tiles/
+    - assets/sprites/planets/
+    - assets/sprites/icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

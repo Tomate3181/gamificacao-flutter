@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/sprites.dart';
 import '../../../core/utils/number_format.dart';
 import '../../../widgets/eco_button.dart';
 import '../../../widgets/message_banner.dart';
@@ -69,12 +70,11 @@ class ShopPage extends ConsumerWidget {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: ResourceCounter(
-                            icon: Icons.air,
+                            iconAsset: Sprites.oxygen,
                             label: 'Oxigênio disponível',
                             value: oxygen == null
                                 ? '…'
                                 : formatResource(oxygen),
-                            color: AppColors.auroraTeal,
                           ),
                         ),
                       ],

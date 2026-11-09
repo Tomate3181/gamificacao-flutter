@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/sprites.dart';
 import 'lumi_sprite.dart';
 import 'tree_sprite.dart';
 
@@ -22,6 +23,7 @@ class PlanetView extends StatefulWidget {
   const PlanetView({
     super.key,
     required this.totalSlots,
+    required this.theme,
     required this.trees,
     required this.onSlotTap,
     required this.lumiMood,
@@ -31,6 +33,9 @@ class PlanetView extends StatefulWidget {
   });
 
   final int totalSlots;
+
+  /// Tema do planeta (desert, forest, island, tundra, mountain).
+  final String theme;
   final Map<int, PlanetSlotTree> trees;
   final ValueChanged<int> onSlotTap;
   final LumiMood lumiMood;
@@ -108,6 +113,7 @@ class _PlanetViewState extends State<PlanetView> {
                   itemCount: widget.totalSlots,
                   itemBuilder: (context, index) => _Slot(
                     index: index,
+                    theme: widget.theme,
                     tree: widget.trees[index],
                     isLoading: widget.loadingSlot == index,
                     onTap: () => widget.onSlotTap(index),
@@ -140,28 +146,22 @@ class _PlanetViewState extends State<PlanetView> {
 class _Slot extends StatelessWidget {
   const _Slot({
     required this.index,
+    required this.theme,
     required this.tree,
     required this.isLoading,
     required this.onTap,
   });
 
   final int index;
+  final String theme;
   final PlanetSlotTree? tree;
   final bool isLoading;
   final VoidCallback onTap;
 
-  static const _polluted = Color(0xFF5A4A42);
-  static const _pollutedAlt = Color(0xFF4E4039);
-  static const _soil = Color(0xFF2F7D4A);
-  static const _soilAlt = Color(0xFF2A7043);
-
   @override
   Widget build(BuildContext context) {
     final tree = this.tree;
-    final even = (index + index ~/ 10) % 2 == 0;
-    final color = tree == null
-        ? (even ? _polluted : _pollutedAlt)
-        : (even ? _soil : _soilAlt);
+    final ground = Sprites.tile(theme, restored: tree != null, slot: index);
 
     return Semantics(
       button: true,
@@ -172,9 +172,13 @@ class _Slot extends StatelessWidget {
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: color,
+            image: DecorationImage(
+              image: AssetImage(ground),
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.none,
+            ),
             border: Border.all(
-              color: AppColors.skyDeep.withValues(alpha: 0.35),
+              color: AppColors.skyDeep.withValues(alpha: 0.25),
               width: 0.5,
             ),
           ),

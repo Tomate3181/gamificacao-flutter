@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/sprites.dart';
 import '../../../core/utils/number_format.dart';
 import '../../../widgets/eco_button.dart';
 import '../../../widgets/message_banner.dart';
@@ -156,38 +157,36 @@ class _PlanetContent extends ConsumerWidget {
                 planetName: planet.planet.name,
                 reforested: planet.reforestedSlots,
                 total: planet.planet.totalSlots,
+                planetAsset: Sprites.planet(planet.planet.theme),
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: ResourceCounter(
-                      icon: Icons.bolt,
+                      iconAsset: Sprites.energy,
                       label: 'Energia',
                       value: player == null
                           ? '…'
                           : formatResource(player.energy),
-                      color: AppColors.gold,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: ResourceCounter(
-                      icon: Icons.air,
+                      iconAsset: Sprites.oxygen,
                       label: 'Oxigênio',
                       value: player == null
                           ? '…'
                           : formatResource(player.oxygen),
-                      color: AppColors.auroraTeal,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: ResourceCounter(
-                      icon: Icons.star_rounded,
+                      iconAsset: Sprites.points,
                       label: 'Pontos',
                       value: player == null ? '…' : '${player.totalPoints}',
-                      color: AppColors.hotPink,
                     ),
                   ),
                 ],
@@ -195,6 +194,7 @@ class _PlanetContent extends ConsumerWidget {
               const SizedBox(height: 20),
               PlanetView(
                 totalSlots: planet.planet.totalSlots,
+                theme: planet.planet.theme,
                 trees: {
                   for (final entry in planet.trees.entries)
                     entry.key: PlanetSlotTree(
