@@ -20,7 +20,9 @@ class MainShell extends ConsumerStatefulWidget {
 
   static const items = [
     FloatingNavItem(icon: Icons.public, label: 'Planeta'),
+    FloatingNavItem(icon: Icons.flag_outlined, label: 'Missões'),
     FloatingNavItem(icon: Icons.storefront_outlined, label: 'Loja'),
+    FloatingNavItem(icon: Icons.leaderboard_outlined, label: 'Ranking'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Perfil'),
   ];
 

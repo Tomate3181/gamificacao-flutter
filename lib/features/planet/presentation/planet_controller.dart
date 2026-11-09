@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/game_failure.dart';
+import '../../achievements/domain/achievement.dart';
 import '../../auth/presentation/session_providers.dart';
+import '../../missions/presentation/progress_sync.dart';
 import '../../player/domain/economy.dart';
 import '../../player/presentation/player_controller.dart';
 import '../../shop/domain/upgrade.dart';
@@ -39,7 +41,11 @@ final speciesCostProvider = Provider.family<double, TreeSpecies>((
   );
 });
 
-typedef PlantOutcome = ({GameFailure? failure, bool planetCompleted});
+typedef PlantOutcome = ({
+  GameFailure? failure,
+  bool planetCompleted,
+  List<UnlockedAchievement> achievements,
+});
 
 class PlanetController extends AsyncNotifier<PlanetState> {
   @override
@@ -59,7 +65,11 @@ class PlanetController extends AsyncNotifier<PlanetState> {
   }) async {
     final planting = ref.read(plantingSlotProvider.notifier);
     if (ref.read(plantingSlotProvider) != null) {
-      return (failure: null, planetCompleted: false);
+      return (
+        failure: null,
+        planetCompleted: false,
+        achievements: const <UnlockedAchievement>[],
+      );
     }
     planting.set(slotIndex);
     ref.read(lumiControllerProvider.notifier).follow(slotIndex);
@@ -68,7 +78,13 @@ class PlanetController extends AsyncNotifier<PlanetState> {
       final result = await ref
           .read(planetRepositoryProvider)
           .plantTree(slotIndex: slotIndex, speciesId: speciesId);
-      if (!ref.mounted) return (failure: null, planetCompleted: false);
+      if (!ref.mounted) {
+        return (
+          failure: null,
+          planetCompleted: false,
+          achievements: const <UnlockedAchievement>[],
+        );
+      }
 
       final current = state.value;
       if (current != null) {
@@ -89,10 +105,22 @@ class PlanetController extends AsyncNotifier<PlanetState> {
       if (result.planetCompleted) {
         ref.read(lumiControllerProvider.notifier).celebrate();
       }
-      return (failure: null, planetCompleted: result.planetCompleted);
+      if (result.achievements.isNotEmpty) {
+        ref.read(lumiControllerProvider.notifier).celebrate();
+      }
+      syncGameProgress(ref, achievements: true);
+      return (
+        failure: null,
+        planetCompleted: result.planetCompleted,
+        achievements: result.achievements,
+      );
     } on GameFailure catch (failure) {
       ref.read(lumiControllerProvider.notifier).wander();
-      return (failure: failure, planetCompleted: false);
+      return (
+        failure: failure,
+        planetCompleted: false,
+        achievements: const <UnlockedAchievement>[],
+      );
     } finally {
       if (ref.mounted) planting.set(null);
     }

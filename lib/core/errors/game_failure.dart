@@ -34,6 +34,10 @@ class GameFailure implements Exception {
     'upgrade_unavailable': 'Este upgrade ainda não está disponível.',
     'max_level': 'Este upgrade já está no nível máximo.',
     'invalid_steps': 'Contagem de passos inválida.',
+    'invalid_mission': 'Missão inválida. Atualize a tela e tente de novo.',
+    'mission_not_started': 'Inicie a missão antes de resgatar.',
+    'mission_already_completed': 'Você já resgatou esta missão.',
+    'mission_not_ready': 'A missão ainda não chegou na meta. Continue jogando!',
   };
 
   @override

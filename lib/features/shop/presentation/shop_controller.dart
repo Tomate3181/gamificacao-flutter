@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/game_failure.dart';
 import '../../auth/presentation/session_providers.dart';
+import '../../missions/presentation/progress_sync.dart';
 import '../../player/presentation/player_controller.dart';
 import '../data/shop_repository.dart';
 import '../domain/upgrade.dart';
@@ -55,6 +56,7 @@ class ShopController extends AsyncNotifier<List<ShopItem>> {
       ref
           .read(playerControllerProvider.notifier)
           .applyServerValues(oxygen: result.oxygen);
+      syncGameProgress(ref);
       return null;
     } on GameFailure catch (failure) {
       return failure;

@@ -10,6 +10,10 @@ import '../../../widgets/eco_button.dart';
 import '../../../widgets/message_banner.dart';
 import '../../../widgets/planet_progress_bar.dart';
 import '../../../widgets/planet_view.dart';
+import '../../../widgets/progress_card.dart';
+import '../../missions/domain/mission.dart';
+import '../../missions/presentation/mission_tile.dart';
+import '../../missions/presentation/missions_controller.dart';
 import '../../../widgets/resource_counter.dart';
 import '../../player/domain/player_stats.dart';
 import '../../player/presentation/player_controller.dart';
@@ -87,11 +91,14 @@ class _PlanetPageState extends ConsumerState<PlanetPage> {
     final outcome = await ref
         .read(planetControllerProvider.notifier)
         .plant(slotIndex: slot, speciesId: speciesId);
-    final message =
-        outcome.failure?.message ??
-        (outcome.planetCompleted
-            ? 'Planeta 100% reflorestado! Você ganhou pontos.'
-            : null);
+    final lines = [
+      if (outcome.failure != null) outcome.failure!.message,
+      if (outcome.planetCompleted)
+        'Planeta 100% reflorestado! Você ganhou pontos.',
+      for (final achievement in outcome.achievements)
+        'Conquista desbloqueada: ${achievement.name}!',
+    ];
+    final message = lines.isEmpty ? null : lines.join('\n');
     if (message != null) {
       messenger
         ..hideCurrentSnackBar()
@@ -140,6 +147,10 @@ class _PlanetContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lumi = ref.watch(lumiControllerProvider);
+    final missions = ref.watch(missionsControllerProvider).value;
+    final missionsDone =
+        missions?.where((m) => m.status == MissionStatus.completed).length ?? 0;
+    final featured = ref.watch(featuredMissionProvider);
     final plantingSlot = ref.watch(plantingSlotProvider);
     final textTheme = Theme.of(context).textTheme;
     final player = this.player;
@@ -153,6 +164,23 @@ class _PlanetContent extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              ProgressCard(
+                title: 'Olá, ${player?.nickname ?? 'guardião'}!',
+                subtitle: 'A Lumi está te esperando no planeta.',
+                stats: [
+                  ProgressStat(
+                    iconAsset: Sprites.points,
+                    label: 'pontos',
+                    value: player == null ? '…' : '${player.totalPoints}',
+                  ),
+                  ProgressStat(
+                    iconAsset: Sprites.boot,
+                    label: 'missões concluídas',
+                    value: missions == null ? '…' : '$missionsDone',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               PlanetProgressBar(
                 planetName: planet.planet.name,
                 reforested: planet.reforestedSlots,
@@ -223,6 +251,17 @@ class _PlanetContent extends ConsumerWidget {
                     color: AppColors.textMuted,
                   ),
                 ),
+              if (featured != null) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Missão em destaque',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                MissionTile(mission: featured),
+              ],
             ],
           ),
         ),

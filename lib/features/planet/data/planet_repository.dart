@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/data/supabase_guard.dart';
+import '../../achievements/domain/achievement.dart';
 import '../domain/planet_models.dart';
 
 final planetRepositoryProvider = Provider<PlanetRepository>(
@@ -14,6 +15,7 @@ typedef PlantResult = ({
   int totalPoints,
   int reforestedSlots,
   bool planetCompleted,
+  List<UnlockedAchievement> achievements,
 });
 
 abstract interface class PlanetRepository {
@@ -107,6 +109,9 @@ class SupabasePlanetRepository implements PlanetRepository {
         totalPoints: (result['total_points'] as num).toInt(),
         reforestedSlots: (result['reforested_slots'] as num).toInt(),
         planetCompleted: result['planet_completed'] as bool,
+        achievements: UnlockedAchievement.listFrom(
+          result['achievements_unlocked'],
+        ),
       );
     });
   }

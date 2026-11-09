@@ -36,7 +36,7 @@ class EcoButton extends StatelessWidget {
                 Icon(icon, size: 20),
                 const SizedBox(width: 8),
               ],
-              Text(label),
+              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
             ],
           );
 

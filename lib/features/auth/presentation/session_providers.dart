@@ -9,8 +9,17 @@ final currentUserIdProvider = StreamProvider<String?>(
 );
 
 /// Espera o usuário logado. Lança erro se não houver sessão.
+///
+/// Use no `build` dos controladores (observa a troca de usuário).
 Future<String> requireUserId(Ref ref) async {
   final userId = await ref.watch(currentUserIdProvider.future);
+  if (userId == null) throw StateError('Sem usuário logado');
+  return userId;
+}
+
+/// Mesmo que [requireUserId], para usar fora do `build`.
+Future<String> readUserId(Ref ref) async {
+  final userId = await ref.read(currentUserIdProvider.future);
   if (userId == null) throw StateError('Sem usuário logado');
   return userId;
 }

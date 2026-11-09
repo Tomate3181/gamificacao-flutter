@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/router/app_routes.dart';
+import '../../../core/theme/sprites.dart';
+import '../../../widgets/error_retry.dart';
+import '../../../widgets/progress_card.dart';
+import 'profile_controller.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_format.dart';
@@ -10,8 +17,8 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../player/presentation/player_controller.dart';
 import '../../steps/presentation/step_controller.dart';
 
-/// Perfil provisório da fase 2: dados básicos, configurações (modo demo)
-/// e logout. O perfil completo chega na fase 3.
+/// Perfil: apelido, e-mail, números do jogador, conquistas,
+/// configurações (modo demo) e logout.
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
@@ -56,6 +63,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final player = ref.watch(playerControllerProvider).value;
     final steps = ref.watch(stepControllerProvider);
     final auth = ref.watch(authControllerProvider);
+    final summary = ref.watch(profileControllerProvider);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -81,11 +89,58 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       color: AppColors.textMuted,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${player?.totalPoints ?? 0} pontos',
-                    style: textTheme.titleMedium?.copyWith(
-                      color: AppColors.hotPink,
+                  const SizedBox(height: 16),
+                  summary.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (_, _) => ErrorRetry(
+                      message: 'Não foi possível carregar seus números.',
+                      onRetry: () =>
+                          ref.read(profileControllerProvider.notifier).reload(),
+                    ),
+                    data: (data) => ProgressCard(
+                      title: 'Seu progresso',
+                      stats: [
+                        ProgressStat(
+                          iconAsset: Sprites.points,
+                          label: 'pontos',
+                          value: '${player?.totalPoints ?? 0}',
+                        ),
+                        ProgressStat(
+                          iconAsset: Sprites.boot,
+                          label: 'missões',
+                          value: '${data.missionsCompleted}',
+                        ),
+                        ProgressStat(
+                          iconAsset: Sprites.leaf,
+                          label: 'conquistas',
+                          value:
+                              '${data.achievementsUnlocked}/${data.achievementsTotal}',
+                        ),
+                        ProgressStat(
+                          iconAsset: Sprites.planet('forest'),
+                          label: 'planetas',
+                          value: '${data.planetsCompleted}',
+                        ),
+                        ProgressStat(
+                          iconAsset: Sprites.tree(3),
+                          label: 'árvores',
+                          value: '${data.treesPlanted}',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => context.go(AppRoutes.achievements),
+                    icon: const Icon(Icons.emoji_events_outlined),
+                    label: const Text('Ver conquistas'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      foregroundColor: AppColors.gold,
+                      side: const BorderSide(color: AppColors.gold),
                     ),
                   ),
                   const SizedBox(height: 32),

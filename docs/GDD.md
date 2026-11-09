@@ -68,22 +68,27 @@ Categorias, cada uma com níveis (1 a 10) e custo crescente (1.5x por nível):
 
 Upgrades são permanentes e valem para todos os planetas.
 
-## 7. Missões ecológicas (requisito do PDF)
+## 7. Missões (gameplay)
 
-- **Modo economia:** ficar um período sem iluminação desnecessária.
-- **Explorador sustentável:** identificar e registrar um ponto de coleta seletiva.
-- **Desafio reutilizar:** dar nova utilidade a um objeto que seria descartado.
-- **Mobilidade consciente:** trajeto curto a pé ou de bicicleta, quando seguro e viável.
-- **Consumo inteligente:** planejar uma compra evitando desperdícios.
+Decisão de 09/11/2026: as missões são objetivos do próprio jogo, não tarefas fora dele. Nada de foto ou comprovação: o progresso é contado pelo servidor enquanto a pessoa joga.
 
-Cada missão: título, descrição, categoria, dificuldade (fácil, média, difícil), pontos e status (disponível, em andamento, concluída). Uma missão só dá pontos uma vez por usuário. Pode ser simulada no protótipo.
+Categorias:
+
+- **Caminhada:** dar X passos (pedômetro ou modo demo).
+- **Plantio:** plantar X árvores, ou X árvores de uma espécie.
+- **Oxigênio:** coletar X de oxigênio.
+- **Melhorias:** comprar upgrades na loja.
+
+Fluxo: o jogador **inicia** a missão, o progresso conta a partir daí (dentro das RPCs de passos, plantio, coleta e compra) e, ao chegar na meta, ele **resgata** a recompensa de pontos e energia (fácil 20, média 35, difícil 50 de energia).
+
+Cada missão: título, descrição, dica, categoria, dificuldade (fácil, média, difícil), meta, pontos, energia e status (disponível, em andamento, pronta para resgatar, concluída). Uma missão só dá recompensa uma vez por usuário. O catálogo inicial tem 10 missões; o balanceamento fica para depois que a base do jogo estiver completa.
 
 ## 8. Conquistas
 
 - **Primeiros passos:** concluir a primeira missão.
 - **Agente verde:** concluir cinco missões.
 - **Consistência:** concluir missões em três dias diferentes.
-- **Mestre da reciclagem:** concluir X desafios da categoria.
+- **Mestre jardineiro:** concluir três missões de plantio (substitui "Mestre da reciclagem").
 - **Planeta salvo:** concluir o primeiro planeta.
 - **Floresta viva:** plantar 100 árvores.
 
@@ -127,14 +132,14 @@ Lumi é a companheira do jogador. É um bichinho pequeno, dourado, inspirado no 
 | Cadastro | `/register` | E-mail, senha e apelido |
 | Home (planeta) | `/home` | Barra de progresso, planeta, Lumi, contadores |
 | Missões | `/missions` | Lista ou grade por categoria e status |
-| Detalhes da missão | `/missions/:id` | Descrição, orientações, pontos, botão iniciar/concluir |
+| Detalhes da missão | `/missions/:id` | Objetivo, dica, recompensa, progresso, botão iniciar/resgatar |
 | Loja | `/shop` | Upgrades por categoria, custo e nível |
 | Conquistas | `/achievements` | Grade desbloqueada e bloqueada |
 | Ranking | `/ranking` | Lista global, top 3 destacado, posição do usuário |
 | Perfil | `/profile` | Apelido, e-mail, pontos, missões, conquistas, planetas, logout e configurações |
 
 - **GoRouter** para todas as rotas, com proteção de rotas internas.
-- **Barra inferior flutuante:** Loja, Missões, Ranking e Perfil.
+- **Barra inferior flutuante:** Planeta, Missões, Loja, Ranking e Perfil. Conquistas abrem a partir do perfil.
 - Navegação não depende só do botão voltar do Android.
 
 ## 13. Widgets personalizados (mínimo 3, reutilizáveis)
@@ -174,8 +179,8 @@ Todos recebem dados por parâmetros.
 | `user_trees` | id, user_id, user_planet_id, species_id, slot_index, planted_at |
 | `upgrades` | id, category, name, max_level, base_cost, effect |
 | `user_upgrades` | user_id, upgrade_id, level |
-| `missions` | id, title, description, category, difficulty, points |
-| `user_missions` | user_id, mission_id, status, completed_at |
+| `missions` | id, title, description, guidance, category, difficulty, points, energy_reward, goal_type, goal_value, goal_species_id |
+| `user_missions` | user_id, mission_id, status, progress, completed_at |
 | `achievements` | id, name, description, icon, condition_type, condition_value |
 | `user_achievements` | user_id, achievement_id, unlocked_at |
 
@@ -183,7 +188,8 @@ Todos recebem dados por parâmetros.
 
 - RLS ativo em todas as tabelas.
 - Usuário só lê e escreve as próprias linhas em `user_*` e `profiles`.
-- Energia, oxigênio e pontos **não** são alterados direto pelo cliente. Ações passam por funções RPC que validam no servidor: `plant_tree`, `complete_mission`, `buy_upgrade`, `collect_offline_oxygen` (esta última na fase de polimento).
+- Energia, oxigênio e pontos **não** são alterados direto pelo cliente. Ações passam por funções RPC que validam no servidor: `plant_tree`, `buy_upgrade`, `add_step_energy`, `collect_oxygen`, `start_mission`, `complete_mission`, `collect_offline_oxygen` (esta última na fase de polimento).
+- Conquistas são desbloqueadas no servidor ao plantar e ao resgatar missões.
 - `user_missions` com constraint única `(user_id, mission_id)`, para não dar pontos repetidos.
 - Ranking vem de view ou função que calcula a pontuação a partir do banco.
 

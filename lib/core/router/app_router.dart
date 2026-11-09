@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/achievements/presentation/achievements_page.dart';
 import '../../features/auth/data/supabase_auth_repository.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
+import '../../features/missions/presentation/mission_details_page.dart';
+import '../../features/missions/presentation/missions_page.dart';
 import '../../features/planet/presentation/planet_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
+import '../../features/ranking/presentation/ranking_page.dart';
 import '../../features/shop/presentation/shop_page.dart';
 import '../../features/splash/presentation/splash_page.dart';
 import 'app_routes.dart';
@@ -40,8 +44,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.register,
         builder: (context, state) => const RegisterPage(),
       ),
-      // Telas internas com a barra flutuante. Missões e Ranking entram na
-      // fase 3.
+      // Telas internas com a barra flutuante (seção 12 do GDD).
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainShell(shell: shell),
         branches: [
@@ -56,6 +59,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.missions,
+                builder: (context, state) => const MissionsPage(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => MissionDetailsPage(
+                      missionId:
+                          int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.shop,
                 builder: (context, state) => const ShopPage(),
               ),
@@ -64,8 +84,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.ranking,
+                builder: (context, state) => const RankingPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.profile,
                 builder: (context, state) => const ProfilePage(),
+              ),
+              GoRoute(
+                path: AppRoutes.achievements,
+                builder: (context, state) => const AchievementsPage(),
               ),
             ],
           ),

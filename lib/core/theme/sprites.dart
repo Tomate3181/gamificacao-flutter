@@ -35,6 +35,30 @@ class Sprites {
   static const energy = '$_root/icons/energy.png';
   static const oxygen = '$_root/icons/oxygen.png';
   static const points = '$_root/icons/points.png';
+  static const boot = '$_root/icons/boot.png';
+  static const leaf = '$_root/icons/leaf.png';
+  static const calendar = '$_root/icons/calendar.png';
+  static const upgrade = '$_root/icons/upgrade.png';
+
+  /// Ícone da categoria de missão (walking, planting, oxygen, upgrades).
+  static String missionCategory(String category) => switch (category) {
+    'walking' => boot,
+    'planting' => sprout,
+    'oxygen' => oxygen,
+    'upgrades' => upgrade,
+    _ => points,
+  };
+
+  /// Ícone de conquista pela chave salva no banco.
+  static String achievement(String icon) => switch (icon) {
+    'footprints' => boot,
+    'leaf' => leaf,
+    'calendar' => calendar,
+    'garden' => tree(3),
+    'planet' => planet('forest'),
+    'forest' => tree(8),
+    _ => points,
+  };
 
   static const _themes = {'desert', 'forest', 'island', 'tundra', 'mountain'};
 

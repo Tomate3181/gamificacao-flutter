@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/game_failure.dart';
 import '../../auth/presentation/session_providers.dart';
+import '../../missions/presentation/progress_sync.dart';
 import '../../player/presentation/player_controller.dart';
 import '../data/pedometer_source.dart';
 import '../data/step_repository.dart';
@@ -137,6 +138,7 @@ class StepController extends Notifier<StepState> {
       ref
           .read(playerControllerProvider.notifier)
           .applyServerValues(energy: result.energy);
+      if (result.acceptedSteps > 0) syncGameProgress(ref);
     }
     return result;
   }

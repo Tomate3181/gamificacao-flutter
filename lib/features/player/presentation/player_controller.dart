@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/session_providers.dart';
+import '../../missions/presentation/progress_sync.dart';
 import '../data/player_repository.dart';
 import '../domain/player_stats.dart';
 
@@ -38,6 +39,7 @@ class PlayerController extends AsyncNotifier<PlayerStats> {
       final result = await ref.read(playerRepositoryProvider).collectOxygen();
       if (!ref.mounted) return 0;
       applyServerValues(oxygen: result.oxygen);
+      if (result.collected > 0) syncGameProgress(ref);
       return result.collected;
     } catch (_) {
       return 0;
